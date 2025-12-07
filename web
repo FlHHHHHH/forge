@@ -19,12 +19,7 @@ local function getStat(name)
     return nil
 end
 local function getHeadshot(id)
-    local success, result = pcall(function()
-        local res = request({Url = "https://api.newstargeted.com/roblox/users/v1/avatar-headshot?userid="..id.."&size=420x420&format=Png", Method = "GET"})
-        return HttpService:JSONDecode(res.Body).data[1].imageUrl
-    end)
-    if success and result then return result end
-    return "https://www.roblox.com/headshot-thumbnail/image?userId="..id.."&width=420&height=420&format=png"
+    return "https://api.newstargeted.com/roblox/users/v1/avatar-headshot?userid="..id.."&size=420x420&format=Png&isCircular=false"
 end
 local function send()
     local level = getStat("Level") or "??"
@@ -58,7 +53,7 @@ local function send()
         Headers = {["Content-Type"] = "application/json"},
         Body = HttpService:JSONEncode(payload)
     }
-    print("Attempting to send webhook...")  -- Debug start
+    print("Attempting to send webhook...") -- Debug start
     local success, response = pcall(request, req_table)
     if success then
         if response.StatusCode == 204 or response.StatusCode == 200 then
@@ -67,12 +62,10 @@ local function send()
             warn("Webhook failed with status: " .. response.StatusCode .. " | Body: " .. (response.Body or "No body"))
         end
     else
-        warn("Request error: " .. tostring(response))  -- This will print the actual error message
+        warn("Request error: " .. tostring(response)) -- This will print the actual error message
     end
 end
-
 send()
-
 spawn(function()
     while true do
         wait(UPDATE_INTERVAL)
@@ -81,5 +74,4 @@ spawn(function()
         end
     end
 end)
-
 print("Forge Tracker LOADED")
