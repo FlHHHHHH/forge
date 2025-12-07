@@ -52,14 +52,23 @@ local function send()
             footer = {text = "Roblox User ID: "..LocalPlayer.UserId.." | "..LocalPlayer.Name.." • Today at "..os.date("%I:%M %p")}
         }}
     }
-    pcall(function()
-        request({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode(payload)
-        })
-    end)
+    local req_table = {
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = HttpService:JSONEncode(payload)
+    }
+    print("Attempting to send webhook...")  -- Debug start
+    local success, response = pcall(request, req_table)
+    if success then
+        if response.StatusCode == 204 or response.StatusCode == 200 then
+            print("Webhook sent successfully! Status: " .. response.StatusCode)
+        else
+            warn("Webhook failed with status: " .. response.StatusCode .. " | Body: " .. (response.Body or "No body"))
+        end
+    else
+        warn("Request error: " .. tostring(response))  -- This will print the actual error message
+    end
 end
 
 send()
