@@ -72,4 +72,4 @@ spawn(function()
     end
 end)
 
-print("Forge Tracker LOADED | Updates every "..UPDATE_INTERVAL.." seconds")
+print("Forge Tracker LOADED")
