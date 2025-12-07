@@ -20,7 +20,7 @@ local function getStat(name)
 end
 local function getHeadshot(id)
     local success, result = pcall(function()
-        local res = request({Url = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds="..id.."&size=420x420&format=Png", Method = "GET"})
+        local res = request({Url = "https://api.newstargeted.com/roblox/users/v1/avatar-headshot?userid="..id.."&size=420x420&format=Png", Method = "GET"})
         return HttpService:JSONDecode(res.Body).data[1].imageUrl
     end)
     if success and result then return result end
