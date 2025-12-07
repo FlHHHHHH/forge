@@ -2,14 +2,13 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 30)
-local request = syn and syn.request or http_request or request or HttpPost or function(t)
-    return HttpService:PostAsync(t.Url, t.Body, Enum.HttpContentType.ApplicationJson, false, t.Headers)
-end
 local START_TIME = tick()
 local START_GOLD = nil
+
 local function commafy(n)
     return tostring(math.floor(n)):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
 end
+
 local function getStat(name)
     local obj = PlayerGui:FindFirstChild(name, true)
     if obj and (obj:IsA("TextLabel") or obj:IsA("TextBox") or obj:IsA("TextButton")) then
@@ -17,14 +16,50 @@ local function getStat(name)
     end
     return nil
 end
+
 local function getHeadshot(id)
+    local request_func = syn and syn.request or http_request or request or HttpPost or nil
+    if not request_func then
+        print("No request function available for headshot fetch")
+        return "https://www.roblox.com/headshot-thumbnail/image?userId="..id.."&width=420&height=420&format=png"
+    end
     local success, result = pcall(function()
-        local res = request({Url = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds="..id.."&size=420x420&format=Png", Method = "GET"})
+        local res = request_func({Url = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds="..id.."&size=420x420&format=Png", Method = "GET"})
         return HttpService:JSONDecode(res.Body).data[1].imageUrl
     end)
     if success and result then return result end
     return "https://www.roblox.com/headshot-thumbnail/image?userId="..id.."&width=420&height=420&format=png"
 end
+
+local function tryRequest(options)
+    local methods = {
+        {name = "syn.request", func = syn and syn.request},
+        {name = "http_request", func = http_request},
+        {name = "request", func = request},
+        {name = "HttpPost", func = HttpPost},
+        {name = "HttpService:PostAsync", func = function(t)
+            return HttpService:PostAsync(t.Url, t.Body, Enum.HttpContentType.ApplicationJson, false, t.Headers)
+        end}
+    }
+    
+    for _, method in ipairs(methods) do
+        if method.func then
+            print("Attempting send with: " .. method.name)
+            local success, response = pcall(method.func, options)
+            if success then
+                print("Send succeeded with " .. method.name .. "! Response: " .. (response.StatusCode or "Body: " .. response))
+                return true, response
+            else
+                warn("Send failed with " .. method.name .. ": " .. response)
+            end
+        else
+            print("Skipping unavailable method: " .. method.name)
+        end
+    end
+    print("All methods failed!")
+    return false
+end
+
 local function send()
     local level = getStat("Level") or "??"
     local goldStr = getStat("Gold") or "0"
@@ -51,14 +86,13 @@ local function send()
             footer = {text = "Roblox User ID: "..LocalPlayer.UserId.." | "..LocalPlayer.Name.." • Today at "..os.date("%I:%M %p")}
         }}
     }
-    pcall(function()
-        request({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode(payload)
-        })
-    end)
+    local options = {
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = HttpService:JSONEncode(payload)
+    }
+    tryRequest(options)
 end
 
 send()
